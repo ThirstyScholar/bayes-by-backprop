@@ -1,28 +1,15 @@
-from BNNLayer import BNNLayer
-
 import torch
 import torch.nn as nn
 
 
 class BNN(nn.Module):
-    def __init__(self, n_input, hidden_size, n_output):
+    def __init__(self, *layers):
         super(BNN, self).__init__()
-        self.input = BNNLayer(n_input,
-                              hidden_size,
-                              activation='relu',
-                              prior_mean=0, prior_rho=-3)
-        self.hidden = BNNLayer(hidden_size,
-                               hidden_size,
-                               activation='relu',
-                               prior_mean=0, prior_rho=-3)
-        self.output = BNNLayer(hidden_size,
-                               n_output,
-                               activation='softmax',
-                               prior_mean=0, prior_rho=-3)
 
-        # Put in a list for convenient iterating over the layers
-        self.layers = []
-        for layer in [self.input, self.hidden, self.output]: self.layers.append(layer)
+        self.layers, self.params = [], nn.ParameterList()
+        for layer in layers:
+            self.layers.append(layer)
+            self.params.extend([*layer.parameters()])   # register module parameters
 
     def forward(self, x, mode):
         if mode == 'forward':
@@ -36,21 +23,28 @@ class BNN(nn.Module):
                 x = layer.forward(x, mode)
             return x
 
-    def Forward(self, x, y, n_samples):
-        total_likelh = 0
-        total_kl = 0
+    def Forward(self, x, y, n_samples, type):
+
+        assert type in {'Gaussian', 'Softmax'}, 'Likelihood type not found'
 
         # Sample N samples and average
+        total_kl, total_likelh = 0., 0.
         for _ in range(n_samples):
             out, kl = self.forward(x, mode='forward')
-            likelh = torch.log(out.gather(1, y)).sum()
+
+            # Gaussian output (with unit var)
+            # lklh = torch.log(torch.exp(-(y - out) ** 2 / 2e-2) / math.sqrt(2e-2 * math.pi)).sum()
+
+            if type == 'Gaussian':
+                lklh = (-.5 * (y - out) ** 2).sum()
+            else:   # softmax
+                lklh = torch.log(out.gather(1, y)).sum()
 
             total_kl += kl
-            total_likelh += likelh
+            total_likelh += lklh
 
         return total_kl / n_samples, total_likelh / n_samples
 
     @staticmethod
-    def loss_fn(kl, likelh, n_batch):
-        return (kl / n_batch - likelh).mean()
-    
+    def loss_fn(kl, lklh, n_batch):
+        return (kl / n_batch - lklh).mean()

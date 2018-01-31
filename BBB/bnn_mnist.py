@@ -4,6 +4,7 @@ Adapt from:
 2. "Variational Dropout and the Local Reparameterization Trick" (https://arxiv.org/abs/1506.02557)
 3. http://gluon.mxnet.io/chapter18_variational-methods-and-uncertainty/bayes-by-backprop.html
 """
+from BNNLayer import BNNLayer
 from BNN import BNN
 
 import torch
@@ -47,7 +48,8 @@ compute_accu = lambda pred, true, digits: round((pred == true).mean() * 100, dig
 if __name__ == '__main__':
 
     # Initialize network
-    bnn = BNN(784, 128, 10)
+    bnn = BNN(BNNLayer(784, 128, activation='relu', prior_mean=0, prior_rho=-3),
+              BNNLayer(128, 10, activation='softmax', prior_mean=0, prior_rho=-3))
     optim = torch.optim.Adam(bnn.parameters(), lr=LearningRate)
 
     # Main training loop
@@ -60,7 +62,7 @@ if __name__ == '__main__':
             batch_X = Variable(X.view(BatchSize, -1))
             batch_Y = Variable(Y.view(BatchSize, -1))
 
-            kl, log_likelihood = bnn.Forward(batch_X, batch_Y, N_Samples)
+            kl, log_likelihood = bnn.Forward(batch_X, batch_Y, N_Samples, type='Softmax')
 
             # Loss and backprop
             loss = BNN.loss_fn(kl, log_likelihood, N_Batch)

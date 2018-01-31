@@ -12,7 +12,7 @@ class BNNLayer(nn.Module):
     softplus = lambda x: math.log(1 + math.exp(x))
 
     def __init__(self, n_input, n_output, activation, prior_mean, prior_rho):
-        assert activation == 'relu' or 'softmax' or 'none', 'Activation Type Not Found'
+        assert activation in {'relu', 'softmax', 'none'}, 'Activation Type Not Found'
 
         super(BNNLayer, self).__init__()
 
@@ -40,7 +40,7 @@ class BNNLayer(nn.Module):
         self._Var = lambda x: Variable(torch.from_numpy(x).type(torch.FloatTensor))
 
     def forward(self, X, mode):
-        assert mode == 'forward' or 'MAP' or 'MC', 'BNNLayer Mode Not Found'
+        assert mode in {'forward', 'MAP', 'MC'}, 'BNNLayer Mode Not Found'
 
         _shape = (X.size()[0], self.n_output)
 

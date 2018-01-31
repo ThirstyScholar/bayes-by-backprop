@@ -35,3 +35,13 @@ Test error with and without symmetric sampling are around 2.2%, respectively. Wi
 1. `BNNLayer.py` contains a Bayesian layer class.
 2. `BNN.py` contains a Bayesian neural network class.
 3. `bnn_mnist.py` = MNIST data from `torchvision` + training process.
+
+
+
+### A Toy Regression Task
+
+`bnn_regression.py`
+
+A toy problem is taken from ["Probabilistic Backpropagation for Scalable Learning of Bayesian Neural Networks"](https://arxiv.org/abs/1502.05336).
+
+![bnn_regression](BBB/bnn_regression.png)
